@@ -4,6 +4,7 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { DatabaseModule } from './db/database.module';
 import { validateEnv } from './config/env.schema';
+import { CommentsModule } from './comments/comments.module';
 
 @Module({
   imports: [
@@ -13,6 +14,7 @@ import { validateEnv } from './config/env.schema';
       validate: validateEnv,
     }),
     DatabaseModule,
+    CommentsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

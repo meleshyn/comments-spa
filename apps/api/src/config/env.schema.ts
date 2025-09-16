@@ -2,6 +2,9 @@ import { z } from 'zod';
 
 // Define the environment schema
 export const envSchema = z.object({
+  // Frontend configuration
+  FRONTEND_URL: z.string().url(),
+
   // Database configuration
   DB_HOST: z.string().min(1),
   DB_PORT: z.coerce.number().int().min(1).max(65535),
