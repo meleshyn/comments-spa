@@ -17,6 +17,9 @@ export const envSchema = z.object({
   NODE_ENV: z
     .enum(['development', 'production', 'test'])
     .default('development'),
+
+  // reCAPTCHA configuration
+  RECAPTCHA_SECRET_KEY: z.string().min(1),
 });
 
 // Type inference from the schema

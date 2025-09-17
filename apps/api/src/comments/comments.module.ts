@@ -1,12 +1,14 @@
 import { Module } from '@nestjs/common';
+import { HttpModule } from '@nestjs/axios';
 import { DatabaseModule } from '../db/database.module';
 import { CommentsService } from './comments.service';
 import { CommentsController } from './comments.controller';
+import { RecaptchaService } from './recaptcha.service';
 
 @Module({
-  imports: [DatabaseModule],
+  imports: [DatabaseModule, HttpModule],
   controllers: [CommentsController],
-  providers: [CommentsService],
+  providers: [CommentsService, RecaptchaService],
   exports: [CommentsService],
 })
 export class CommentsModule {}

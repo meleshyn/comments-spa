@@ -4,12 +4,19 @@ import dompurify from 'isomorphic-dompurify';
 import { DrizzleService } from '../db/database.service';
 import { comments, type Comment, type NewComment } from '../db/schema';
 import { CreateCommentDto } from './dto/create-comment.dto';
+import { RecaptchaService } from './recaptcha.service';
 
 @Injectable()
 export class CommentsService {
-  constructor(private readonly drizzle: DrizzleService) {}
+  constructor(
+    private readonly drizzle: DrizzleService,
+    private readonly recaptchaService: RecaptchaService,
+  ) {}
 
   async create(createCommentDto: CreateCommentDto): Promise<Comment> {
+    // Validate CAPTCHA token first - fail fast approach
+    await this.recaptchaService.validate(createCommentDto.captchaToken);
+
     // Sanitize the text field - only allow specific HTML tags
     const sanitizedText = dompurify.sanitize(createCommentDto.text, {
       ALLOWED_TAGS: ['a', 'code', 'i', 'strong'],

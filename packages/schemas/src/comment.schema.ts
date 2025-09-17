@@ -10,6 +10,7 @@ export const createCommentSchema = z.object({
   email: z.string().email('Invalid email format.'),
   homePage: z.string().url('Invalid URL format.').optional(),
   text: z.string().min(1, 'Text cannot be empty.'),
+  captchaToken: z.string().min(1, 'CAPTCHA token is required.'),
 });
 
 export type CreateCommentDto = z.infer<typeof createCommentSchema>;
