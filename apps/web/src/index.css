@@ -110,4 +110,62 @@
   html {
     color-scheme: dark;
   }
+
+  /* Tiptap Editor MD3 Styling */
+  .ProseMirror {
+    outline: none !important;
+  }
+
+  .ProseMirror p {
+    margin: 0.5em 0;
+  }
+
+  .ProseMirror p:first-child {
+    margin-top: 0;
+  }
+
+  .ProseMirror p:last-child {
+    margin-bottom: 0;
+  }
+
+  .ProseMirror strong {
+    font-weight: 600;
+    color: oklch(0.85 0.05 270);
+  }
+
+  .ProseMirror em {
+    font-style: italic;
+    color: oklch(0.8 0.03 270);
+  }
+
+  .ProseMirror code {
+    background: oklch(0.2 0.01 270);
+    border: 1px solid oklch(0.3 0.01 270);
+    border-radius: 0.25rem;
+    padding: 0.125rem 0.25rem;
+    font-family:
+      'SF Mono', Monaco, 'Inconsolata', 'Roboto Mono', 'Source Code Pro',
+      monospace;
+    font-size: 0.875em;
+    color: oklch(0.9 0.05 270);
+  }
+
+  .ProseMirror a {
+    color: oklch(0.75 0.15 270);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    transition: color 0.2s ease;
+  }
+
+  .ProseMirror a:hover {
+    color: oklch(0.8 0.18 270);
+  }
+
+  .ProseMirror p.is-editor-empty:first-child::before {
+    content: attr(data-placeholder);
+    float: left;
+    color: oklch(0.7 0.02 270);
+    pointer-events: none;
+    height: 0;
+  }
 }

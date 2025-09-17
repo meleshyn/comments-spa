@@ -1,6 +1,9 @@
 // Component exports for easy importing
 export { CommentCard } from './CommentCard';
 export type { CommentCardProps } from './CommentCard';
+export { CommentForm } from './CommentForm';
+export type { CommentFormData } from './CommentForm';
+export { EditorToolbar } from './EditorToolbar';
 
 // UI component re-exports
 export { Button } from './ui/button';

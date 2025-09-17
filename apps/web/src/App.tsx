@@ -1,6 +1,10 @@
+import { useState } from 'react';
 import { CommentCard } from '@/components/CommentCard';
+import { CommentForm, type CommentFormData } from '@/components/CommentForm';
 
 function App() {
+  const [showReplyForm, setShowReplyForm] = useState<string | null>(null);
+
   // Sample data to demonstrate the CommentCard
   const sampleComments = [
     {
@@ -27,8 +31,13 @@ function App() {
   ];
 
   const handleReply = (commentId: string) => {
-    console.log(`Reply to comment ${commentId}`);
-    // This will be connected to the comment form later
+    setShowReplyForm(showReplyForm === commentId ? null : commentId);
+  };
+
+  const handleCommentSubmit = (data: CommentFormData) => {
+    console.log('Comment submitted:', data);
+    // This will be connected to the backend API later
+    setShowReplyForm(null);
   };
 
   return (
@@ -42,10 +51,26 @@ function App() {
           <p className="text-muted-foreground">Material Design 3 Theme Demo</p>
         </div>
 
+        {/* Main Comment Form */}
+        <CommentForm onSubmit={handleCommentSubmit} />
+
         {/* Comment Cards */}
         <div className="space-y-4">
           {sampleComments.map((comment) => (
-            <CommentCard key={comment.id} {...comment} onReply={handleReply} />
+            <div key={comment.id} className="space-y-3">
+              <CommentCard {...comment} onReply={handleReply} />
+
+              {/* Reply Form */}
+              {showReplyForm === comment.id && (
+                <div className="ml-8">
+                  <CommentForm
+                    isReply
+                    parentId={comment.id}
+                    onSubmit={handleCommentSubmit}
+                  />
+                </div>
+              )}
+            </div>
           ))}
         </div>
       </div>
