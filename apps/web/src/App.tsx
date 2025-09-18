@@ -1,34 +1,29 @@
 import { useState } from 'react';
+import { Loader2 } from 'lucide-react';
 import { CommentCard } from '@/components/CommentCard';
 import { CommentForm, type CommentFormData } from '@/components/CommentForm';
+import { SortingControls } from '@/components/SortingControls';
+import { CommentListSkeleton } from '@/components/CommentSkeleton';
+import { Button } from '@/components/ui/button';
+import { useRootComments } from '@/lib/queries';
+import type { SortBy, SortOrder } from '@/lib/api';
 
 function App() {
   const [showReplyForm, setShowReplyForm] = useState<string | null>(null);
+  const [sortBy, setSortBy] = useState<SortBy>('createdAt');
+  const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
 
-  // Sample data to demonstrate the CommentCard
-  const sampleComments = [
-    {
-      id: '1',
-      userName: 'AliceSmith',
-      homePage: 'https://alice.dev',
-      text: 'This is a really interesting discussion! I love how the <strong>Material Design 3</strong> theme looks with the dark mode. The card design is clean and modern.',
-      createdAt: new Date(Date.now() - 1000 * 60 * 30), // 30 minutes ago
-      replyCount: 2,
-    },
-    {
-      id: '2',
-      userName: 'BobDev',
-      text: 'Great point Alice! The <code>CommentCard</code> component is very reusable. I particularly like the <i>subtle</i> elevation and the way avatars display initials.',
-      createdAt: new Date(Date.now() - 1000 * 60 * 15), // 15 minutes ago
-      isReply: true,
-    },
-    {
-      id: '3',
-      userName: 'Charlie',
-      text: 'The color palette really captures that MD3 aesthetic. Looking forward to seeing more components!',
-      createdAt: new Date(Date.now() - 1000 * 60 * 5), // 5 minutes ago
-    },
-  ];
+  // Fetch root comments
+  const {
+    data: commentsData,
+    isLoading,
+    error,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useRootComments(sortBy, sortOrder);
+
+  const allComments = commentsData?.pages.flatMap((page) => page.data) || [];
 
   const handleReply = (commentId: string) => {
     setShowReplyForm(showReplyForm === commentId ? null : commentId);
@@ -38,6 +33,12 @@ function App() {
     console.log('Comment submitted:', data);
     // This will be connected to the backend API later
     setShowReplyForm(null);
+  };
+
+  const handleSortChange = (newSortBy: SortBy, newSortOrder: SortOrder) => {
+    setSortBy(newSortBy);
+    setSortOrder(newSortOrder);
+    // Refetch will happen automatically due to query key change
   };
 
   return (
@@ -54,25 +55,78 @@ function App() {
         {/* Main Comment Form */}
         <CommentForm onSubmit={handleCommentSubmit} />
 
-        {/* Comment Cards */}
-        <div className="space-y-4">
-          {sampleComments.map((comment) => (
-            <div key={comment.id} className="space-y-3">
-              <CommentCard {...comment} onReply={handleReply} />
+        {/* Sorting Controls */}
+        <SortingControls
+          sortBy={sortBy}
+          sortOrder={sortOrder}
+          onSortByChange={(newSortBy) => handleSortChange(newSortBy, sortOrder)}
+          onSortOrderChange={(newSortOrder) =>
+            handleSortChange(sortBy, newSortOrder)
+          }
+        />
 
-              {/* Reply Form */}
-              {showReplyForm === comment.id && (
-                <div className="ml-8">
-                  <CommentForm
-                    isReply
-                    parentId={comment.id}
-                    onSubmit={handleCommentSubmit}
-                  />
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
+        {/* Loading Skeleton for Initial Load */}
+        {isLoading && <CommentListSkeleton />}
+
+        {/* Error State */}
+        {error && (
+          <div className="text-center py-8">
+            <p className="text-destructive mb-2">Failed to load comments</p>
+            <p className="text-muted-foreground text-sm mb-4">
+              Check your network connection.
+            </p>
+          </div>
+        )}
+
+        {/* Comment Cards */}
+        {!isLoading && allComments.length > 0 && (
+          <div className="space-y-4">
+            {allComments.map((comment) => (
+              <div key={comment.id} className="space-y-3">
+                <CommentCard
+                  {...comment}
+                  createdAt={new Date(comment.createdAt)}
+                  onReply={handleReply}
+                />
+
+                {/* Reply Form */}
+                {showReplyForm === comment.id && (
+                  <div className="ml-8">
+                    <CommentForm
+                      isReply
+                      parentId={comment.id}
+                      onSubmit={handleCommentSubmit}
+                    />
+                  </div>
+                )}
+              </div>
+            ))}
+
+            {/* Load More Button */}
+            {hasNextPage && (
+              <div className="flex justify-center pt-6">
+                <Button
+                  variant="outline"
+                  onClick={() => fetchNextPage()}
+                  disabled={isFetchingNextPage}
+                  className="gap-2"
+                >
+                  {isFetchingNextPage ? (
+                    <Loader2 className="size-4 animate-spin" />
+                  ) : null}
+                  {isFetchingNextPage ? 'Loading...' : 'Load More Comments'}
+                </Button>
+              </div>
+            )}
+
+            {/* Loading Skeleton for Next Page */}
+            {isFetchingNextPage && (
+              <div className="pt-4">
+                <CommentListSkeleton count={3} />
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
