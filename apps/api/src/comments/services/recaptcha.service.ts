@@ -2,7 +2,7 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
-import type { Env } from '../config/env.schema';
+import type { Env } from '../../config/env.schema';
 
 interface RecaptchaResponse {
   success: boolean;
