@@ -36,6 +36,7 @@
     "axios": "^1.12.2",
     "drizzle-orm": "^0.44.5",
     "helmet": "^8.1.0",
+    "html-entities": "^2.6.0",
     "isomorphic-dompurify": "^2.27.0",
     "nestjs-zod": "^5.0.1",
     "pg": "^8.16.3",

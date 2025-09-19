@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { isNull, eq, desc, asc, and, sql, SQL } from 'drizzle-orm';
 import dompurify from 'isomorphic-dompurify';
+import { decode } from 'html-entities';
 import { RecaptchaService } from './services/recaptcha.service';
 import { DrizzleService, comments, type Comment, type NewComment } from '../db';
 import { CreateCommentDto, GetCommentsQueryDto } from './dto';
@@ -168,8 +169,10 @@ export class CommentsService {
    * Sanitize comment text to prevent XSS attacks
    */
   private sanitizeCommentText(rawText: string): string {
-    return dompurify.sanitize(rawText, {
+    const decodedText = decode(rawText);
+    return dompurify.sanitize(decodedText, {
       ALLOWED_TAGS: ['a', 'code', 'i', 'strong'],
+      ALLOWED_ATTR: ['href'],
     });
   }
 }
