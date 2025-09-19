@@ -5,11 +5,10 @@ import { CommentForm, type CommentFormData } from '@/components/CommentForm';
 import { SortingControls } from '@/components/SortingControls';
 import { CommentListSkeleton } from '@/components/CommentSkeleton';
 import { Button } from '@/components/ui/button';
-import { useRootComments } from '@/lib/queries';
+import { useRootComments, useAddComment } from '@/lib/queries';
 import type { SortBy, SortOrder } from '@/lib/api';
 
 function App() {
-  const [showReplyForm, setShowReplyForm] = useState<string | null>(null);
   const [sortBy, setSortBy] = useState<SortBy>('createdAt');
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
 
@@ -23,16 +22,18 @@ function App() {
     isFetchingNextPage,
   } = useRootComments(sortBy, sortOrder);
 
+  // Optimistic comment mutation
+  const addCommentMutation = useAddComment();
+
   const allComments = commentsData?.pages.flatMap((page) => page.data) || [];
 
-  const handleReply = (commentId: string) => {
-    setShowReplyForm(showReplyForm === commentId ? null : commentId);
-  };
-
-  const handleCommentSubmit = (data: CommentFormData) => {
-    console.log('Comment submitted:', data);
-    // This will be connected to the backend API later
-    setShowReplyForm(null);
+  const handleCommentSubmit = async (data: CommentFormData) => {
+    try {
+      await addCommentMutation.mutateAsync(data);
+    } catch (error) {
+      // Error handling is done in the mutation hook
+      console.error('Comment submission failed:', error);
+    }
   };
 
   const handleSortChange = (newSortBy: SortBy, newSortOrder: SortOrder) => {
@@ -53,7 +54,10 @@ function App() {
         </div>
 
         {/* Main Comment Form */}
-        <CommentForm onSubmit={handleCommentSubmit} />
+        <CommentForm
+          onSubmit={handleCommentSubmit}
+          isLoading={addCommentMutation.isPending}
+        />
 
         {/* Sorting Controls */}
         <SortingControls
@@ -82,24 +86,11 @@ function App() {
         {!isLoading && allComments.length > 0 && (
           <div className="space-y-4">
             {allComments.map((comment) => (
-              <div key={comment.id} className="space-y-3">
-                <CommentCard
-                  {...comment}
-                  createdAt={new Date(comment.createdAt)}
-                  onReply={handleReply}
-                />
-
-                {/* Reply Form */}
-                {showReplyForm === comment.id && (
-                  <div className="ml-8">
-                    <CommentForm
-                      isReply
-                      parentId={comment.id}
-                      onSubmit={handleCommentSubmit}
-                    />
-                  </div>
-                )}
-              </div>
+              <CommentCard
+                key={comment.id}
+                {...comment}
+                createdAt={new Date(comment.createdAt)}
+              />
             ))}
 
             {/* Load More Button */}

@@ -4,6 +4,7 @@ export type { CommentCardProps } from './CommentCard';
 export { CommentForm } from './CommentForm';
 export type { CommentFormData } from './CommentForm';
 export { EditorToolbar } from './EditorToolbar';
+export { ReCaptchaModal } from './ReCaptchaModal';
 export { SortingControls } from './SortingControls';
 export { CommentSkeleton, CommentListSkeleton } from './CommentSkeleton';
 

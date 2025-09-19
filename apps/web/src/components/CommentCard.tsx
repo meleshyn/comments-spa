@@ -8,8 +8,9 @@ import {
   CardFooter,
   CardHeader,
 } from '@/components/ui/card';
-import { useCommentReplies } from '@/lib/queries';
+import { useCommentReplies, useAddComment } from '@/lib/queries';
 import { CommentSkeleton } from '@/components/CommentSkeleton';
+import { CommentForm, type CommentFormData } from '@/components/CommentForm';
 import { cn } from '@/lib/utils';
 
 export interface CommentCardProps {
@@ -25,10 +26,8 @@ export interface CommentCardProps {
   createdAt: Date;
   /** Number of replies to this comment */
   repliesCount?: number;
-  /** Whether this is a nested reply */
-  isReply?: boolean;
-  /** Callback when reply button is clicked */
-  onReply?: (commentId: string) => void;
+  /** Nesting depth for visual indentation (0 = root level) */
+  depth?: number;
   /** Additional CSS classes */
   className?: string;
 }
@@ -44,20 +43,23 @@ export function CommentCard({
   text,
   createdAt,
   repliesCount = 0,
-  isReply = false,
-  onReply,
+  depth = 0,
   className,
 }: CommentCardProps) {
-  const [showReplies, setShowReplies] = useState(false);
+  const [isFormVisible, setIsFormVisible] = useState(false);
+  const [areRepliesVisible, setAreRepliesVisible] = useState(false);
 
-  // Fetch replies when showReplies is true
+  // Fetch replies when areRepliesVisible is true
   const {
     data: repliesData,
     isLoading: isLoadingReplies,
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
-  } = useCommentReplies(id, showReplies);
+  } = useCommentReplies(id, areRepliesVisible);
+
+  // Optimistic comment mutation for nested replies
+  const addCommentMutation = useAddComment();
   // Generate initials from username for avatar fallback
   const getInitials = (name: string): string => {
     return name
@@ -89,24 +91,47 @@ export function CommentCard({
   };
 
   const handleReplyClick = () => {
-    onReply?.(id);
+    // Toggle only the reply form visibility
+    setIsFormVisible(!isFormVisible);
   };
 
   const handleToggleReplies = () => {
-    setShowReplies(!showReplies);
+    //
+    if (areRepliesVisible) {
+      setIsFormVisible(false);
+    }
+
+    // Toggle only the replies visibility
+    setAreRepliesVisible(!areRepliesVisible);
+  };
+
+  const handleReplyFormSubmit = async (data: CommentFormData) => {
+    try {
+      await addCommentMutation.mutateAsync({
+        ...data,
+        parentId: id,
+      });
+
+      // Close reply form on successful submission
+      setIsFormVisible(false);
+    } catch (error) {
+      // Error handling is done in the mutation hook
+      console.error('Reply submission failed:', error);
+    }
   };
 
   // Get all replies from all pages
   const allReplies = repliesData?.pages.flatMap((page) => page.data) || [];
 
+  // Calculate dynamic indentation based on depth using style prop for reliability
+  const indentationStyle = depth > 0 ? { marginLeft: `${depth * 2}rem` } : {};
+
   return (
-    <>
+    <div className="space-y-3" style={indentationStyle}>
       <Card
         className={cn(
           'transition-all duration-200 hover:shadow-md',
-          // MD3 elevation for replies
-          isReply && 'ml-8 mt-3',
-          // MD3 surface styling
+          // MD3 surface styling with depth-based opacity
           'border-border/50 bg-card/80 backdrop-blur-sm',
           className
         )}
@@ -153,7 +178,12 @@ export function CommentCard({
           <div
             className="text-card-foreground leading-relaxed"
             // Support for HTML content from rich text editor
-            dangerouslySetInnerHTML={{ __html: text }}
+            dangerouslySetInnerHTML={{
+              __html: text.replace(
+                /<a/g,
+                '<a target="_blank" rel="noopener noreferrer nofollow" class="text-primary hover:text-primary/80 underline"'
+              ),
+            }}
           />
         </CardContent>
 
@@ -179,12 +209,12 @@ export function CommentCard({
                   onClick={handleToggleReplies}
                   className="text-muted-foreground hover:text-primary gap-1.5 h-8 px-2"
                 >
-                  {showReplies ? (
+                  {areRepliesVisible ? (
                     <ChevronUp className="size-4" />
                   ) : (
                     <ChevronDown className="size-4" />
                   )}
-                  {showReplies ? 'Hide' : 'Show'} {repliesCount} repl
+                  {areRepliesVisible ? 'Hide' : 'Show'} {repliesCount} repl
                   {repliesCount === 1 ? 'y' : 'ies'}
                 </Button>
               )}
@@ -198,14 +228,26 @@ export function CommentCard({
         </CardFooter>
       </Card>
 
-      {/* Replies Section */}
-      {showReplies && (
-        <div className="mt-4 space-y-3">
+      {/* Reply Form Section - Independent of replies visibility */}
+      {isFormVisible && (
+        <div className="mt-4 pl-4 border-l-2 border-l-primary/30">
+          <CommentForm
+            isReply
+            parentId={id}
+            onSubmit={handleReplyFormSubmit}
+            isLoading={addCommentMutation.isPending}
+          />
+        </div>
+      )}
+
+      {/* Replies Section - Independent of form visibility */}
+      {areRepliesVisible && (
+        <div className="mt-4 space-y-4">
           {/* Loading skeleton for initial load */}
           {isLoadingReplies && (
             <div className="space-y-3">
               {Array.from({ length: 3 }, (_, index) => (
-                <CommentSkeleton key={index} isReply />
+                <CommentSkeleton key={index} depth={depth + 1} />
               ))}
             </div>
           )}
@@ -218,15 +260,11 @@ export function CommentCard({
               text: reply.text,
               createdAt: new Date(reply.createdAt),
               repliesCount: reply.repliesCount,
-              isReply: true,
+              depth: depth + 1, // Increment depth for nested replies
             };
 
             if (reply.homePage) {
               replyProps.homePage = reply.homePage;
-            }
-
-            if (onReply) {
-              replyProps.onReply = onReply;
             }
 
             return <CommentCard key={reply.id} {...replyProps} />;
@@ -234,7 +272,7 @@ export function CommentCard({
 
           {/* Load more replies button */}
           {hasNextPage && (
-            <div className="ml-8 mt-3">
+            <div className="pl-4">
               <Button
                 variant="outline"
                 size="sm"
@@ -256,12 +294,12 @@ export function CommentCard({
           {isFetchingNextPage && (
             <div className="space-y-3">
               {Array.from({ length: 2 }, (_, index) => (
-                <CommentSkeleton key={`loading-${index}`} isReply />
+                <CommentSkeleton key={`loading-${index}`} depth={depth + 1} />
               ))}
             </div>
           )}
         </div>
       )}
-    </>
+    </div>
   );
 }

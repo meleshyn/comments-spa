@@ -8,8 +8,8 @@ import {
 import { cn } from '@/lib/utils';
 
 interface CommentSkeletonProps {
-  /** Whether this is a nested reply skeleton */
-  isReply?: boolean;
+  /** Nesting depth for visual indentation (0 = root level) */
+  depth?: number;
   /** Additional CSS classes */
   className?: string;
 }
@@ -19,59 +19,62 @@ interface CommentSkeletonProps {
  * Mimics the layout of the CommentCard component
  */
 export function CommentSkeleton({
-  isReply = false,
+  depth = 0,
   className,
 }: CommentSkeletonProps) {
-  return (
-    <Card
-      className={cn(
-        'animate-pulse',
-        // MD3 elevation for replies
-        isReply && 'ml-8 mt-3',
-        // MD3 surface styling
-        'border-border/50 bg-card/80 backdrop-blur-sm',
-        className
-      )}
-    >
-      <CardHeader className="pb-3">
-        <div className="flex items-start gap-3">
-          {/* Avatar Skeleton */}
-          <Skeleton className="size-10 rounded-full border-2 border-border/30" />
+  // Calculate dynamic indentation based on depth
+  const indentationStyle = depth > 0 ? { marginLeft: `${depth * 2}rem` } : {};
 
-          {/* User info skeleton */}
-          <div className="flex-1 min-w-0 space-y-2">
-            <div className="flex items-center gap-2">
-              {/* Username skeleton */}
-              <Skeleton className="h-4 w-20" />
-              {/* Timestamp skeleton */}
-              <Skeleton className="h-3 w-16" />
+  return (
+    <div style={indentationStyle}>
+      <Card
+        className={cn(
+          'animate-pulse',
+          // MD3 surface styling with depth-based border
+          'border-border/50 bg-card/80 backdrop-blur-sm',
+          className
+        )}
+      >
+        <CardHeader className="pb-3">
+          <div className="flex items-start gap-3">
+            {/* Avatar Skeleton */}
+            <Skeleton className="size-10 rounded-full border-2 border-border/30" />
+
+            {/* User info skeleton */}
+            <div className="flex-1 min-w-0 space-y-2">
+              <div className="flex items-center gap-2">
+                {/* Username skeleton */}
+                <Skeleton className="h-4 w-20" />
+                {/* Timestamp skeleton */}
+                <Skeleton className="h-3 w-16" />
+              </div>
             </div>
           </div>
-        </div>
-      </CardHeader>
+        </CardHeader>
 
-      <CardContent className="pt-0">
-        {/* Comment text skeleton */}
-        <div className="space-y-2">
-          <Skeleton className="h-4 w-full" />
-          <Skeleton className="h-4 w-4/5" />
-          <Skeleton className="h-4 w-3/5" />
-        </div>
-      </CardContent>
-
-      <CardFooter className="pt-3 border-t border-border/30">
-        <div className="flex items-center justify-between w-full">
-          {/* Reply button skeleton */}
-          <Skeleton className="h-8 w-16" />
-
-          {/* Placeholder for attachments */}
-          <div className="flex gap-2">
-            <Skeleton className="h-4 w-4 rounded" />
-            <Skeleton className="h-4 w-4 rounded" />
+        <CardContent className="pt-0">
+          {/* Comment text skeleton */}
+          <div className="space-y-2">
+            <Skeleton className="h-4 w-full" />
+            <Skeleton className="h-4 w-4/5" />
+            <Skeleton className="h-4 w-3/5" />
           </div>
-        </div>
-      </CardFooter>
-    </Card>
+        </CardContent>
+
+        <CardFooter className="pt-3 border-t border-border/30">
+          <div className="flex items-center justify-between w-full">
+            {/* Reply button skeleton */}
+            <Skeleton className="h-8 w-16" />
+
+            {/* Placeholder for attachments */}
+            <div className="flex gap-2">
+              <Skeleton className="h-4 w-4 rounded" />
+              <Skeleton className="h-4 w-4 rounded" />
+            </div>
+          </div>
+        </CardFooter>
+      </Card>
+    </div>
   );
 }
 

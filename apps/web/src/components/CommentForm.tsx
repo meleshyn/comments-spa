@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
-import Link from '@tiptap/extension-link';
 import { Send } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
@@ -13,6 +12,7 @@ import {
   CardHeader,
 } from '@/components/ui/card';
 import { EditorToolbar } from '@/components/EditorToolbar';
+import { ReCaptchaModal } from '@/components/ReCaptchaModal';
 import { cn } from '@/lib/utils';
 
 interface CommentFormProps {
@@ -22,6 +22,8 @@ interface CommentFormProps {
   isReply?: boolean;
   /** Parent comment ID if this is a reply */
   parentId?: string;
+  /** Whether the form is currently submitting */
+  isLoading?: boolean;
   /** Additional CSS classes */
   className?: string;
 }
@@ -32,6 +34,7 @@ export interface CommentFormData {
   homePage?: string;
   text: string;
   parentId?: string;
+  captchaToken: string;
 }
 
 /**
@@ -42,11 +45,19 @@ export function CommentForm({
   onSubmit,
   isReply = false,
   parentId,
+  isLoading = false,
   className,
 }: CommentFormProps) {
   const [userName, setUserName] = useState('');
   const [email, setEmail] = useState('');
   const [homePage, setHomePage] = useState('');
+
+  // CAPTCHA modal state
+  const [isCaptchaModalOpen, setIsCaptchaModalOpen] = useState(false);
+  const [pendingData, setPendingData] = useState<Omit<
+    CommentFormData,
+    'captchaToken'
+  > | null>(null);
 
   // Initialize Tiptap editor with minimal configuration
   const editor = useEditor({
@@ -64,42 +75,9 @@ export function CommentForm({
         strike: false,
         // Keep only: bold, italic, code (inline), and basic text formatting
       }),
-      Link.configure({
-        openOnClick: false,
-        HTMLAttributes: {
-          class: 'text-primary hover:text-primary/80 underline',
-        },
-      }),
     ],
     content: '',
     editorProps: {
-      handleKeyDown: (view, event) => {
-        // Keyboard shortcuts
-        if (event.ctrlKey || event.metaKey) {
-          switch (event.key) {
-            case 'k':
-              event.preventDefault();
-              // Trigger link dialog
-              {
-                const toolbar = document.querySelector(
-                  '[title="Add Link (Ctrl+K)"]'
-                ) as HTMLButtonElement;
-                toolbar?.click();
-                return true;
-              }
-            case 'Enter':
-              // Submit form on Ctrl+Enter
-              if (userName.trim() && email.trim() && editor?.getText().trim()) {
-                event.preventDefault();
-                const form = view.dom.closest('form');
-                form?.requestSubmit();
-                return true;
-              }
-              break;
-          }
-        }
-        return false;
-      },
       attributes: {
         class: cn(
           // MD3 text field styling
@@ -127,10 +105,11 @@ export function CommentForm({
       return;
     }
 
-    const formData: CommentFormData = {
+    // Prepare form data (without captcha token)
+    const formData: Omit<CommentFormData, 'captchaToken'> = {
       userName: userName.trim(),
       email: email.trim(),
-      text,
+      text: text.trim(),
     };
 
     // Only add optional fields if they have values
@@ -142,18 +121,45 @@ export function CommentForm({
       formData.parentId = parentId;
     }
 
-    onSubmit?.(formData);
-
-    // Reset form
-    setUserName('');
-    setEmail('');
-    setHomePage('');
-    editor.commands.clearContent();
+    // Store pending data and open CAPTCHA modal
+    setPendingData(formData);
+    setIsCaptchaModalOpen(true);
   };
 
   const handleFileAttach = () => {
     // TODO: Implement file attachment functionality
     console.log('File attachment clicked');
+  };
+
+  // Handle successful CAPTCHA verification
+  const handleCaptchaVerify = (captchaToken: string) => {
+    if (!pendingData) return;
+
+    // Combine pending data with CAPTCHA token
+    const completeFormData: CommentFormData = {
+      ...pendingData,
+      captchaToken,
+    };
+
+    // Submit the form data
+    onSubmit?.(completeFormData);
+
+    // Close modal and reset state
+    setIsCaptchaModalOpen(false);
+    setPendingData(null);
+
+    // Reset form fields
+    setUserName('');
+    setEmail('');
+    setHomePage('');
+    editor?.commands.clearContent();
+  };
+
+  // Handle CAPTCHA errors or modal close
+  const handleCaptchaError = () => {
+    // Just close the modal, keep the form data intact
+    setIsCaptchaModalOpen(false);
+    setPendingData(null);
   };
 
   return (
@@ -182,6 +188,7 @@ export function CommentForm({
                 onChange={(e) => setUserName(e.target.value)}
                 placeholder="Your username"
                 required
+                disabled={isLoading}
                 className="bg-input border-border focus:border-ring"
               />
             </div>
@@ -200,6 +207,7 @@ export function CommentForm({
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="your@email.com"
                 required
+                disabled={isLoading}
                 className="bg-input border-border focus:border-ring"
               />
             </div>
@@ -219,6 +227,7 @@ export function CommentForm({
               value={homePage}
               onChange={(e) => setHomePage(e.target.value)}
               placeholder="https://your-website.com"
+              disabled={isLoading}
               className="bg-input border-border focus:border-ring"
             />
           </div>
@@ -231,17 +240,18 @@ export function CommentForm({
             <div className="border border-border rounded-lg overflow-hidden bg-input">
               <EditorToolbar editor={editor} onFileAttach={handleFileAttach} />
               <EditorContent
+                onChange={() => {
+                  if (editor) {
+                    editor.commands.setContent(editor.getHTML());
+                  }
+                }}
                 editor={editor}
                 className="min-h-[120px] [&_.ProseMirror]:outline-none [&_.ProseMirror]:p-3"
               />
             </div>
             <p className="text-xs text-muted-foreground">
               You can use <strong>bold</strong>, <em>italic</em>,{' '}
-              <code>code</code>, and links in your comment. Press{' '}
-              <kbd className="px-1 py-0.5 bg-muted text-muted-foreground rounded text-xs">
-                Ctrl+Enter
-              </kbd>{' '}
-              to submit.
+              <code>code</code>, and links in your comment.
             </p>
           </div>
         </CardContent>
@@ -253,15 +263,35 @@ export function CommentForm({
               type="submit"
               className="gap-2"
               disabled={
-                !userName.trim() || !email.trim() || !editor?.getText().trim()
+                isLoading ||
+                !userName.trim() ||
+                !email.trim() ||
+                !editor?.getText().trim()
               }
             >
-              <Send className="size-4" />
-              {isReply ? 'Reply' : 'Post Comment'}
+              {isLoading ? (
+                <>
+                  <div className="size-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                  Posting...
+                </>
+              ) : (
+                <>
+                  <Send className="size-4" />
+                  {isReply ? 'Reply' : 'Post Comment'}
+                </>
+              )}
             </Button>
           </div>
         </CardFooter>
       </form>
+
+      {/* reCAPTCHA Modal */}
+      <ReCaptchaModal
+        isOpen={isCaptchaModalOpen}
+        onOpenChange={setIsCaptchaModalOpen}
+        onVerify={handleCaptchaVerify}
+        onError={handleCaptchaError}
+      />
     </Card>
   );
 }
