@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Lightbox from 'yet-another-react-lightbox';
 import 'yet-another-react-lightbox/styles.css';
 import { X, FileText } from 'lucide-react';
@@ -67,6 +67,7 @@ export function AttachmentLightbox({
   });
 
   // Custom render function for text files
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const renderSlide = ({ slide }: { slide: any }) => {
     if (slide.attachment) {
       return (
@@ -148,22 +149,31 @@ function TextFileViewer({
   const [content, setContent] = useState<string | null>(cachedContent || null);
   const [isLoading, setIsLoading] = useState(false);
 
-  const loadContent = async () => {
-    if (content !== null || isLoading) return;
-
-    setIsLoading(true);
-    try {
-      const textContent = await onFetchContent(url);
-      setContent(textContent);
-    } finally {
-      setIsLoading(false);
+  // Auto-load content when component mounts or URL changes
+  useEffect(() => {
+    // If we have cached content, use it
+    if (cachedContent !== undefined) {
+      setContent(cachedContent);
+      return;
     }
-  };
 
-  // Auto-load content when component mounts
-  if (content === null && !isLoading) {
-    loadContent();
-  }
+    // If content is already loaded or loading, don't fetch again
+    if (content !== null || isLoading) {
+      return;
+    }
+
+    const loadContentEffect = async () => {
+      setIsLoading(true);
+      try {
+        const textContent = await onFetchContent(url);
+        setContent(textContent);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadContentEffect();
+  }, [url, onFetchContent, cachedContent, content, isLoading]);
 
   if (isLoading) {
     return (
