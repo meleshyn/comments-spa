@@ -168,4 +168,26 @@
     pointer-events: none;
     height: 0;
   }
+
+  /* reCAPTCHA styling fixes for modal interaction */
+  .grecaptcha-badge {
+    z-index: 9999 !important;
+  }
+
+  /* Ensure reCAPTCHA iframes are above modal overlay */
+  iframe[src*='recaptcha'] {
+    z-index: 9999 !important;
+  }
+
+  /* Fix for reCAPTCHA popup/challenge overlay */
+  div[style*='z-index: 2000000000'] {
+    z-index: 9999 !important;
+  }
+
+  /* Ensure reCAPTCHA elements are clickable */
+  .grecaptcha-badge,
+  iframe[src*='recaptcha'],
+  div[style*='z-index'] {
+    pointer-events: auto !important;
+  }
 }
