@@ -53,6 +53,7 @@ export function CommentForm({
   const [email, setEmail] = useState('');
   const [homePage, setHomePage] = useState('');
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [editorContent, setEditorContent] = useState('');
 
   // CAPTCHA modal state
   const [isCaptchaModalOpen, setIsCaptchaModalOpen] = useState(false);
@@ -92,6 +93,10 @@ export function CommentForm({
         ),
         'data-placeholder': 'Write your comment here...',
       },
+    },
+    onUpdate: ({ editor }) => {
+      // Update the local state whenever the editor content changes
+      setEditorContent(editor.getText());
     },
   });
 
@@ -202,6 +207,7 @@ export function CommentForm({
     setEmail('');
     setHomePage('');
     setSelectedFiles([]);
+    setEditorContent('');
     editor?.commands.clearContent();
   };
 
@@ -290,11 +296,6 @@ export function CommentForm({
             <div className="border border-border rounded-lg overflow-hidden bg-input">
               <EditorToolbar editor={editor} onFileAttach={handleFileAttach} />
               <EditorContent
-                onChange={() => {
-                  if (editor) {
-                    editor.commands.setContent(editor.getHTML());
-                  }
-                }}
                 editor={editor}
                 className="min-h-[120px] [&_.ProseMirror]:outline-none [&_.ProseMirror]:p-3"
               />
@@ -373,7 +374,7 @@ export function CommentForm({
                 isLoading ||
                 !userName.trim() ||
                 !email.trim() ||
-                !editor?.getText().trim()
+                !editorContent.trim()
               }
             >
               {isLoading ? (
