@@ -11,6 +11,7 @@ import {
   type SortOrder,
   type Comment,
   type CommentsResponse,
+  type Attachment,
 } from './api';
 import type { CreateCommentDto } from '@acme/schemas';
 
@@ -108,7 +109,10 @@ export function useAddComment() {
 
   return useMutation({
     mutationFn: (
-      data: Omit<CreateCommentDto, 'captchaToken'> & { captchaToken: string }
+      data: Omit<CreateCommentDto, 'captchaToken'> & {
+        captchaToken: string;
+        files?: File[];
+      }
     ) =>
       apiClient.createComment({
         userName: data.userName,
@@ -117,11 +121,26 @@ export function useAddComment() {
         captchaToken: data.captchaToken,
         ...(data.homePage && { homePage: data.homePage }),
         ...(data.parentId && { parentId: data.parentId }),
+        ...(data.files && { files: data.files }),
       }),
 
     onMutate: async (newComment) => {
       // Generate temporary ID for optimistic update
       const tempId = `temp-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+
+      // Create optimistic attachments for instant preview
+      const optimisticAttachments: Attachment[] = newComment.files
+        ? newComment.files.map((file, index) => ({
+            id: `temp-attachment-${tempId}-${index}`,
+            commentId: tempId,
+            fileUrl: file.type.startsWith('image/')
+              ? URL.createObjectURL(file)
+              : `temp-file://${file.name}`, // Placeholder for text files
+            fileType: file.type.startsWith('image/')
+              ? ('image' as const)
+              : ('text' as const),
+          }))
+        : [];
 
       // Create optimistic comment object
       const optimisticComment: Comment = {
@@ -131,6 +150,7 @@ export function useAddComment() {
         text: newComment.text,
         createdAt: new Date().toISOString(),
         repliesCount: 0,
+        attachments: optimisticAttachments,
         ...(newComment.homePage && { homePage: newComment.homePage }),
         ...(newComment.parentId && { parentId: newComment.parentId }),
       };

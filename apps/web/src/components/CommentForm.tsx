@@ -35,6 +35,7 @@ export interface CommentFormData {
   text: string;
   parentId?: string;
   captchaToken: string;
+  files?: File[];
 }
 
 /**
@@ -51,6 +52,7 @@ export function CommentForm({
   const [userName, setUserName] = useState('');
   const [email, setEmail] = useState('');
   const [homePage, setHomePage] = useState('');
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
 
   // CAPTCHA modal state
   const [isCaptchaModalOpen, setIsCaptchaModalOpen] = useState(false);
@@ -121,14 +123,61 @@ export function CommentForm({
       formData.parentId = parentId;
     }
 
+    // Include files if any are selected
+    if (selectedFiles.length > 0) {
+      formData.files = selectedFiles;
+    }
+
     // Store pending data and open CAPTCHA modal
     setPendingData(formData);
     setIsCaptchaModalOpen(true);
   };
 
   const handleFileAttach = () => {
-    // TODO: Implement file attachment functionality
-    console.log('File attachment clicked');
+    // Create file input element
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.multiple = true;
+    input.accept = 'image/jpeg,image/jpg,image/png,image/gif,text/plain';
+
+    input.onchange = (e) => {
+      const target = e.target as HTMLInputElement;
+      if (target.files) {
+        const newFiles = Array.from(target.files);
+
+        // Validate file types and sizes
+        const validFiles = newFiles.filter((file) => {
+          // Check file type
+          const allowedTypes = [
+            'image/jpeg',
+            'image/jpg',
+            'image/png',
+            'image/gif',
+            'text/plain',
+          ];
+          if (!allowedTypes.includes(file.type)) {
+            console.warn(`Unsupported file type: ${file.type}`);
+            return false;
+          }
+
+          // Check file size (5MB limit for safety)
+          if (file.size > 5 * 1024 * 1024) {
+            console.warn(`File too large: ${file.name}`);
+            return false;
+          }
+
+          return true;
+        });
+
+        // Add to selected files (limit to 5 total)
+        setSelectedFiles((prev) => {
+          const combined = [...prev, ...validFiles];
+          return combined.slice(0, 5); // Limit to 5 files
+        });
+      }
+    };
+
+    input.click();
   };
 
   // Handle successful CAPTCHA verification
@@ -152,6 +201,7 @@ export function CommentForm({
     setUserName('');
     setEmail('');
     setHomePage('');
+    setSelectedFiles([]);
     editor?.commands.clearContent();
   };
 
@@ -254,6 +304,63 @@ export function CommentForm({
               <code>code</code>, and links in your comment.
             </p>
           </div>
+
+          {/* File Attachments Preview */}
+          {selectedFiles.length > 0 && (
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-foreground">
+                Attachments ({selectedFiles.length}/5)
+              </label>
+              <div className="grid grid-cols-2 gap-2">
+                {selectedFiles.map((file, index) => (
+                  <div
+                    key={`${file.name}-${index}`}
+                    className="relative p-2 border border-border rounded-lg bg-muted/30"
+                  >
+                    {file.type.startsWith('image/') ? (
+                      <div className="space-y-2">
+                        <img
+                          src={URL.createObjectURL(file)}
+                          alt={file.name}
+                          className="w-full h-20 object-cover rounded"
+                        />
+                        <p className="text-xs text-muted-foreground truncate">
+                          {file.name}
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="flex items-center space-x-2">
+                        <div className="w-8 h-8 bg-primary/10 rounded flex items-center justify-center">
+                          <span className="text-xs font-mono">TXT</span>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs text-foreground truncate">
+                            {file.name}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {(file.size / 1024).toFixed(1)} KB
+                          </p>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Remove file button */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedFiles((prev) =>
+                          prev.filter((_, i) => i !== index)
+                        );
+                      }}
+                      className="absolute -top-1 -right-1 w-5 h-5 bg-destructive text-white rounded-full flex items-center justify-center text-xs hover:bg-destructive/80"
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </CardContent>
 
         <CardFooter className="pt-4 border-t border-border/30">

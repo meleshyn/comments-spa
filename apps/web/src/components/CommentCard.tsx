@@ -1,5 +1,12 @@
 import { useState } from 'react';
-import { MessageSquare, ChevronDown, ChevronUp, Loader2 } from 'lucide-react';
+import {
+  MessageSquare,
+  ChevronDown,
+  ChevronUp,
+  Loader2,
+  FileText,
+  Image,
+} from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import {
@@ -11,7 +18,9 @@ import {
 import { useCommentReplies, useAddComment } from '@/lib/queries';
 import { CommentSkeleton } from '@/components/CommentSkeleton';
 import { CommentForm, type CommentFormData } from '@/components/CommentForm';
+import { AttachmentLightbox } from '@/components/AttachmentLightbox';
 import { cn } from '@/lib/utils';
+import { type Attachment } from '@/lib/api';
 
 export interface CommentCardProps {
   /** Unique identifier for the comment */
@@ -26,6 +35,8 @@ export interface CommentCardProps {
   createdAt: Date;
   /** Number of replies to this comment */
   repliesCount?: number;
+  /** File attachments */
+  attachments?: Attachment[];
   /** Nesting depth for visual indentation (0 = root level) */
   depth?: number;
   /** Additional CSS classes */
@@ -43,11 +54,14 @@ export function CommentCard({
   text,
   createdAt,
   repliesCount = 0,
+  attachments = [],
   depth = 0,
   className,
 }: CommentCardProps) {
   const [isFormVisible, setIsFormVisible] = useState(false);
   const [areRepliesVisible, setAreRepliesVisible] = useState(false);
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [lightboxIndex, setLightboxIndex] = useState(0);
 
   // Fetch replies when areRepliesVisible is true
   const {
@@ -103,6 +117,11 @@ export function CommentCard({
 
     // Toggle only the replies visibility
     setAreRepliesVisible(!areRepliesVisible);
+  };
+
+  const handleAttachmentClick = (index: number) => {
+    setLightboxIndex(index);
+    setLightboxOpen(true);
   };
 
   const handleReplyFormSubmit = async (data: CommentFormData) => {
@@ -185,6 +204,47 @@ export function CommentCard({
               ),
             }}
           />
+
+          {/* Attachments */}
+          {attachments && attachments.length > 0 && (
+            <div className="mt-4 space-y-2">
+              <div className="grid grid-cols-2 gap-2">
+                {attachments.map((attachment, index) => (
+                  <button
+                    key={attachment.id}
+                    onClick={() => handleAttachmentClick(index)}
+                    className="relative group rounded-lg overflow-hidden border border-border hover:border-primary/50 transition-colors focus:outline-none focus:ring-2 focus:ring-primary/20"
+                  >
+                    {attachment.fileType === 'image' ? (
+                      <div className="aspect-video bg-muted">
+                        <img
+                          src={attachment.fileUrl}
+                          alt="Attachment"
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
+                          loading="lazy"
+                        />
+                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-200" />
+                        <div className="absolute top-2 right-2 bg-black/50 text-white p-1 rounded">
+                          <Image className="size-3" />
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="aspect-video bg-muted flex flex-col items-center justify-center p-3 group-hover:bg-muted/70 transition-colors">
+                        <FileText className="size-8 text-primary mb-2" />
+                        <span className="text-xs text-center text-foreground font-medium line-clamp-2">
+                          Text File
+                        </span>
+                      </div>
+                    )}
+                  </button>
+                ))}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Click to view {attachments.length} attachment
+                {attachments.length > 1 ? 's' : ''}
+              </p>
+            </div>
+          )}
         </CardContent>
 
         <CardFooter className="pt-3 border-t border-border/30">
@@ -260,6 +320,7 @@ export function CommentCard({
               text: reply.text,
               createdAt: new Date(reply.createdAt),
               repliesCount: reply.repliesCount,
+              attachments: reply.attachments || [],
               depth: depth + 1, // Increment depth for nested replies
             };
 
@@ -300,6 +361,14 @@ export function CommentCard({
           )}
         </div>
       )}
+
+      {/* Attachment Lightbox */}
+      <AttachmentLightbox
+        attachments={attachments}
+        isOpen={lightboxOpen}
+        currentIndex={lightboxIndex}
+        onClose={() => setLightboxOpen(false)}
+      />
     </div>
   );
 }
