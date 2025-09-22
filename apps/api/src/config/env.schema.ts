@@ -2,6 +2,11 @@ import { z } from 'zod';
 
 // Define the environment schema
 export const envSchema = z.object({
+  // Google Cloud Storage configuration
+  GCS_PROJECT_ID: z.string().min(1),
+  GCS_KEY_FILE: z.string().min(1),
+  GCS_BUCKET_NAME: z.string().min(1),
+
   // Frontend configuration
   FRONTEND_URL: z.string().url(),
 

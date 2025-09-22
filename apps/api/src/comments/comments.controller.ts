@@ -8,11 +8,13 @@ import {
   HttpCode,
   HttpStatus,
   ParseUUIDPipe,
+  UploadedFiles,
 } from '@nestjs/common';
 import { CommentsService } from './comments.service';
 import { CreateCommentDto, GetCommentsQueryDto } from './dto';
 import type { PaginatedCommentsResponse } from './interfaces';
 import type { Comment } from '../db/schema';
+import { ApiFiles } from '../common/decorators/api-files.decorator';
 
 @Controller('comments')
 export class CommentsController {
@@ -20,8 +22,12 @@ export class CommentsController {
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
-  async create(@Body() createCommentDto: CreateCommentDto): Promise<Comment> {
-    return this.commentsService.createComment(createCommentDto);
+  @ApiFiles()
+  async create(
+    @Body() createCommentDto: CreateCommentDto,
+    @UploadedFiles() files?: Express.Multer.File[],
+  ): Promise<Comment> {
+    return this.commentsService.createComment(createCommentDto, files);
   }
 
   @Get()

@@ -2,8 +2,16 @@ import { Injectable } from '@nestjs/common';
 import { isNull, eq, desc, asc, and, sql, SQL } from 'drizzle-orm';
 import dompurify from 'isomorphic-dompurify';
 import { decode } from 'html-entities';
+import { StorageService } from '../storage/storage.service';
 import { RecaptchaService } from './services/recaptcha.service';
-import { DrizzleService, comments, type Comment, type NewComment } from '../db';
+import {
+  DrizzleService,
+  comments,
+  attachments,
+  type Comment,
+  type NewComment,
+  type NewAttachment,
+} from '../db';
 import { CreateCommentDto, GetCommentsQueryDto } from './dto';
 import {
   type PaginatedCommentsResponse,
@@ -15,12 +23,16 @@ export class CommentsService {
   constructor(
     private readonly drizzle: DrizzleService,
     private readonly recaptchaService: RecaptchaService,
+    private readonly storageService: StorageService,
   ) {}
 
   /**
-   * Create a new comment
+   * Create a new comment with optional file attachments
    */
-  async createComment(createCommentDto: CreateCommentDto): Promise<Comment> {
+  async createComment(
+    createCommentDto: CreateCommentDto,
+    files?: Express.Multer.File[],
+  ): Promise<Comment> {
     // Validate CAPTCHA token first - fail fast approach
     await this.recaptchaService.validate(createCommentDto.captchaToken);
 
@@ -35,6 +47,7 @@ export class CommentsService {
       parentId: createCommentDto.parentId || null,
     };
 
+    // Insert the comment first
     const [insertedComment] = await this.drizzle.db
       .insert(comments)
       .values(newComment)
@@ -42,6 +55,28 @@ export class CommentsService {
 
     if (!insertedComment) {
       throw new Error('Failed to create comment');
+    }
+
+    // Process and upload files if any
+    if (files && files.length > 0) {
+      try {
+        const processedFiles = await this.storageService.uploadFiles(files);
+
+        // Save attachment records to database
+        const attachmentRecords: NewAttachment[] = processedFiles.map(
+          (file) => ({
+            commentId: insertedComment.id,
+            fileUrl: file.publicUrl,
+            fileType: file.fileType,
+          }),
+        );
+
+        if (attachmentRecords.length > 0) {
+          await this.drizzle.db.insert(attachments).values(attachmentRecords);
+        }
+      } catch (error) {
+        throw new Error('Failed to process attachments', { cause: error });
+      }
     }
 
     return insertedComment;
@@ -67,7 +102,8 @@ export class CommentsService {
   }
 
   /**
-   * Comments query with replies count subquery
+   * Comments query with replies count and attachments using a single optimized query
+   * Uses LEFT JOIN and aggregation to minimize database roundtrips
    */
   private async executeCommentsQuery(
     query: GetCommentsQueryDto,
@@ -77,7 +113,8 @@ export class CommentsService {
 
     const orderDirection = sortOrder === 'desc' ? desc : asc;
 
-    return this.drizzle.db
+    // Single optimized query using LEFT JOINs and JSON aggregation
+    const results = await this.drizzle.db
       .select({
         id: comments.id,
         userName: comments.userName,
@@ -89,13 +126,39 @@ export class CommentsService {
         repliesCount: sql<number>`(
           SELECT COUNT(*)::int 
           FROM ${comments} AS replies 
-          WHERE replies.parent_id = comments.id
+          WHERE replies.parent_id = ${comments.id}
         )`.as('repliesCount'),
+        // Aggregate attachments using JSON_AGG to avoid N+1 queries
+        attachments: sql<any[]>`
+          COALESCE(
+            JSON_AGG(
+              JSON_BUILD_OBJECT(
+                'id', ${attachments.id},
+                'commentId', ${attachments.commentId},
+                'fileUrl', ${attachments.fileUrl},
+                'fileType', ${attachments.fileType}
+              )
+            ) FILTER (WHERE ${attachments.id} IS NOT NULL),
+            '[]'::json
+          )
+        `.as('attachments'),
       })
       .from(comments)
+      .leftJoin(attachments, eq(comments.id, attachments.commentId))
       .where(and(...whereConditions))
-      .orderBy(orderDirection(comments[sortBy]), orderDirection(comments.id)) // Secondary sort by ID for stability
+      .groupBy(
+        comments.id,
+        comments.userName,
+        comments.email,
+        comments.homePage,
+        comments.text,
+        comments.parentId,
+        comments.createdAt,
+      )
+      .orderBy(orderDirection(comments[sortBy]), orderDirection(comments.id))
       .limit(limit + 1);
+
+    return results;
   }
 
   /**
@@ -139,8 +202,8 @@ export class CommentsService {
       .limit(1);
 
     if (cursorComment.length > 0 && cursorComment[0]) {
-      const cursorValue = cursorComment[0][sortBy];
-      const cursorId = cursorComment[0].id;
+      const cursorValue = cursorComment[0]?.[sortBy];
+      const cursorId = cursorComment[0]?.id;
 
       // Sort field and ID for stable pagination
       return sortOrder === 'desc'

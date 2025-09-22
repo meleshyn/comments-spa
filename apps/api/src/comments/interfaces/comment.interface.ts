@@ -1,7 +1,8 @@
-import { Comment } from '../../db/schema';
+import { Comment, Attachment } from '../../db/schema';
 
 export interface CommentWithRepliesCount extends Comment {
   repliesCount: number;
+  attachments: Attachment[];
 }
 
 export interface PaginatedCommentsResponse {
