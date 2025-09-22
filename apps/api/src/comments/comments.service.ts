@@ -3,7 +3,7 @@ import { isNull, eq, desc, asc, and, sql, SQL } from 'drizzle-orm';
 import dompurify from 'isomorphic-dompurify';
 import { decode } from 'html-entities';
 import { StorageService } from '../storage/storage.service';
-import { RecaptchaService } from './services/recaptcha.service';
+import { RecaptchaService } from '../recaptcha/recaptcha.service';
 import {
   DrizzleService,
   comments,

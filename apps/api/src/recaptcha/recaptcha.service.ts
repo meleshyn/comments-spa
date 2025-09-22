@@ -1,8 +1,8 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
-import type { Env } from '../../config/env.schema';
+import type { Env } from '../config/env.schema';
 
 interface RecaptchaResponse {
   success: boolean;
@@ -13,6 +13,7 @@ interface RecaptchaResponse {
 
 @Injectable()
 export class RecaptchaService {
+  private readonly logger = new Logger(RecaptchaService.name);
   private readonly secretKey: string;
 
   constructor(
@@ -39,7 +40,7 @@ export class RecaptchaService {
 
       if (!response.data.success) {
         const errorCodes = response.data['error-codes'] || [];
-        console.warn('reCAPTCHA validation failed:', errorCodes);
+        this.logger.warn('reCAPTCHA validation failed:', errorCodes);
         throw new BadRequestException('Invalid CAPTCHA.');
       }
     } catch (error) {
@@ -47,7 +48,7 @@ export class RecaptchaService {
         throw error;
       }
 
-      console.error('reCAPTCHA validation error:', error);
+      this.logger.warn('reCAPTCHA validation error:', error);
       throw new BadRequestException('Failed to validate CAPTCHA.');
     }
   }
