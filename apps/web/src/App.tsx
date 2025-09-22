@@ -45,14 +45,6 @@ function App() {
   return (
     <div className="min-h-screen bg-background p-6">
       <div className="max-w-2xl mx-auto space-y-6">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-foreground mb-2">
-            Comments SPA
-          </h1>
-          <p className="text-muted-foreground">Material Design 3 Theme Demo</p>
-        </div>
-
         {/* Main Comment Form */}
         <CommentForm
           onSubmit={handleCommentSubmit}
