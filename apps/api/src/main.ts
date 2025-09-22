@@ -1,5 +1,6 @@
 import { NestFactory } from '@nestjs/core';
 import { ConfigService } from '@nestjs/config';
+import { Logger } from '@nestjs/common';
 import { ZodValidationPipe } from 'nestjs-zod';
 import helmet from 'helmet';
 import { AppModule } from './app.module';
@@ -7,6 +8,7 @@ import type { Env } from './config/env.schema';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  const logger = new Logger('Bootstrap');
 
   // Get configuration service for environment-aware settings
   const configService = app.get(ConfigService<Env>);
@@ -29,11 +31,12 @@ async function bootstrap() {
   const port = configService.get('PORT', { infer: true }) || 3000;
   await app.listen(port);
 
-  console.log(`🚀 API server running on port ${port}`);
-  console.log(`🔐 CORS enabled for origin: ${frontendUrl}`);
+  logger.log(`🚀 API server running on port ${port}`);
+  logger.log(`🔐 CORS enabled for origin: ${frontendUrl}`);
 }
 
 bootstrap().catch((error) => {
-  console.error(error);
+  const logger = new Logger('Bootstrap');
+  logger.error('Failed to start application', error);
   process.exit(1);
 });

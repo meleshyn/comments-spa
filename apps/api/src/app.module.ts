@@ -1,7 +1,5 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
 import { DatabaseModule } from './db/database.module';
 import { validateEnv } from './config/env.schema';
 import { CommentsModule } from './comments/comments.module';
@@ -16,7 +14,7 @@ import { CommentsModule } from './comments/comments.module';
     DatabaseModule,
     CommentsModule,
   ],
-  controllers: [AppController],
-  providers: [AppService],
+  controllers: [],
+  providers: [],
 })
 export class AppModule {}
