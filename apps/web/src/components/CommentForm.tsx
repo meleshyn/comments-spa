@@ -240,6 +240,8 @@ export function CommentForm({
               <Input
                 id="userName"
                 type="text"
+                pattern="^[A-Za-z0-9]+$"
+                title="Username must contain only Latin letters and numbers."
                 value={userName}
                 onChange={(e) => setUserName(e.target.value)}
                 placeholder="Your username"
