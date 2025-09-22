@@ -6,6 +6,7 @@ import {
   Loader2,
   FileText,
   Image,
+  ExternalLink,
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -167,20 +168,25 @@ export function CommentCard({
             {/* User info */}
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
-                {/* Username - with optional homepage link */}
-                {homePage ? (
+                {/* Username */}
+                <span className="font-semibold text-foreground">
+                  {userName}
+                </span>
+
+                {/* Homepage link */}
+                {homePage && (
                   <a
                     href={homePage}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="font-semibold text-foreground hover:text-primary transition-colors"
+                    className="text-muted-foreground hover:text-primary transition-colors"
+                    title={`Visit ${userName}'s homepage`}
                   >
-                    {userName}
+                    <div className="flex items-center gap-1">
+                      <ExternalLink className="size-4" />
+                      Page
+                    </div>
                   </a>
-                ) : (
-                  <span className="font-semibold text-foreground">
-                    {userName}
-                  </span>
                 )}
 
                 {/* Timestamp */}
