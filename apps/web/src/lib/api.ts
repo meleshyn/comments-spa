@@ -61,9 +61,15 @@ class ApiClient {
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      throw new Error(
-        errorData.message || `HTTP error! status: ${response.status}`
-      );
+      // Pass the entire error response as JSON string so it can be parsed by error handlers
+      const errorMessage =
+        errorData.message || `HTTP error! status: ${response.status}`;
+      const fullErrorData = {
+        statusCode: response.status,
+        message: errorMessage,
+        ...errorData,
+      };
+      throw new Error(JSON.stringify(fullErrorData));
     }
 
     return response.json();
@@ -161,9 +167,15 @@ class ApiClient {
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      throw new Error(
-        errorData.message || `HTTP error! status: ${response.status}`
-      );
+      // Pass the entire error response as JSON string so it can be parsed by error handlers
+      const errorMessage =
+        errorData.message || `HTTP error! status: ${response.status}`;
+      const fullErrorData = {
+        statusCode: response.status,
+        message: errorMessage,
+        ...errorData,
+      };
+      throw new Error(JSON.stringify(fullErrorData));
     }
 
     return response.json();

@@ -16,6 +16,91 @@ import {
 import type { CreateCommentDto } from '@acme/schemas';
 
 /**
+ * API Error Response Types
+ */
+interface ValidationError {
+  validation: string;
+  code: string;
+  message: string;
+  path: string[];
+}
+
+interface ApiErrorResponse {
+  statusCode: number;
+  message: string;
+  errors?: ValidationError[];
+}
+
+/**
+ * Formats API validation errors into a user-friendly message
+ */
+function formatValidationErrors(errors: ValidationError[]): string {
+  if (!errors || errors.length === 0) {
+    return 'Validation failed. Please check your input and try again.';
+  }
+
+  // Group errors by field for better readability
+  const errorsByField = errors.reduce(
+    (acc, error) => {
+      const fieldName: string =
+        error.path && error.path.length > 0 ? error.path[0]! : 'unknown';
+      if (!acc[fieldName]) {
+        acc[fieldName] = [];
+      }
+      acc[fieldName]!.push(error.message);
+      return acc;
+    },
+    {} as Record<string, string[]>
+  );
+
+  // Convert field names to user-friendly labels
+  const fieldLabels: Record<string, string> = {
+    userName: 'Username',
+    email: 'Email',
+    homePage: 'Homepage',
+    text: 'Comment',
+    captchaToken: 'CAPTCHA',
+  };
+
+  // Format errors into a readable list
+  const formattedErrors = Object.entries(errorsByField).map(
+    ([field, messages]) => {
+      const label = fieldLabels[field] || field;
+      return `${label}: ${messages.join(', ')}`;
+    }
+  );
+
+  return formattedErrors.join('\n');
+}
+
+/**
+ * Extracts and formats error message from an API error
+ */
+function getErrorMessage(error: unknown): string {
+  if (error instanceof Error) {
+    try {
+      // Try to parse the error message as JSON (in case it contains the API error response)
+      const errorData = JSON.parse(error.message) as ApiErrorResponse;
+      if (errorData.errors && errorData.errors.length > 0) {
+        return formatValidationErrors(errorData.errors);
+      }
+      return errorData.message || error.message;
+    } catch {
+      // If parsing fails, check if the error message looks like a structured response
+      if (
+        error.message.includes('statusCode') ||
+        error.message.includes('errors')
+      ) {
+        return 'Validation failed. Please check your input and try again.';
+      }
+      return error.message;
+    }
+  }
+
+  return 'Failed to post comment. Please try again.';
+}
+
+/**
  * Recursively finds and updates a comment's repliesCount in a nested comment structure
  */
 function updateCommentRepliesCount(
@@ -294,11 +379,8 @@ export function useAddComment() {
         });
       }
 
-      // Show error notification
-      const errorMessage =
-        error instanceof Error
-          ? error.message
-          : 'Failed to post comment. Please try again.';
+      // Show error notification with detailed validation errors
+      const errorMessage = getErrorMessage(error);
 
       toast.error('Comment Failed', {
         description: errorMessage,
