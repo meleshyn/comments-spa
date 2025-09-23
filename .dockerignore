@@ -1,0 +1,49 @@
+# Google credentials
+**/gcs-credentials.json
+
+# Git
+.git
+.gitignore
+
+# Node
+**/node_modules
+.npm
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+# Builds
+**/dist
+**/build
+
+# Turbo
+.turbo
+
+# Docker
+.dockerignore
+**/Dockerfile
+docker-compose.yml
+docker-compose.yaml
+
+# Env
+.env
+.env.*
+!/.env.example
+
+# IDEs
+.idea
+.vscode
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docs
+**/*.md
