@@ -24,7 +24,8 @@ services:
     networks:
       - monorepo_net
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
 
   web:
     restart: unless-stopped
@@ -50,6 +51,11 @@ services:
       - postgres_data:/var/lib/postgresql/data
     networks:
       - monorepo_net
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}']
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
 networks:
   monorepo_net:
