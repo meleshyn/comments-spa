@@ -19,15 +19,11 @@ export class DrizzleService implements OnModuleInit, OnModuleDestroy {
   constructor(private readonly configService: ConfigService<Env>) {}
 
   async onModuleInit(): Promise<void> {
-    const dbConfig = {
-      host: this.configService.get<string>('DB_HOST'),
-      port: this.configService.get<number>('DB_PORT'),
-      user: this.configService.get<string>('DB_USER'),
-      password: this.configService.get<string>('DB_PASSWORD'),
-      database: this.configService.get<string>('DB_NAME'),
-    };
+    const databaseUrl = this.configService.get<string>('DATABASE_URL');
 
-    this.pool = new Pool(dbConfig);
+    this.pool = new Pool({
+      connectionString: databaseUrl,
+    });
     this.db = drizzle(this.pool, { schema });
 
     // Test the connection

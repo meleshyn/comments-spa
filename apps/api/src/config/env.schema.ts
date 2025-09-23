@@ -11,11 +11,7 @@ export const envSchema = z.object({
   FRONTEND_URL: z.string().url(),
 
   // Database configuration
-  DB_HOST: z.string().min(1),
-  DB_PORT: z.coerce.number().int().min(1).max(65535),
-  DB_USER: z.string().min(1),
-  DB_PASSWORD: z.string().min(1),
-  DB_NAME: z.string().min(1),
+  DATABASE_URL: z.string().url(),
 
   // Application configuration
   PORT: z.coerce.number().int().min(1).max(65535).default(3000),
