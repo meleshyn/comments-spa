@@ -1,16 +1,12 @@
 import type { Config } from 'drizzle-kit';
-import * as dotenv from 'dotenv';
 import { envSchema } from './src/config/env.schema';
-
-// Load environment variables for Drizzle CLI
-dotenv.config({ path: ['.env.local', '.env'] });
 
 // Parse environment with the schema
 const env = envSchema.parse(process.env);
 
 export default {
   schema: './src/db/schema.ts',
-  out: './src/db/migrations',
+  out: './migrations',
   dialect: 'postgresql',
   dbCredentials: {
     host: env.DB_HOST,
