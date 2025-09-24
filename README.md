@@ -1,135 +1,219 @@
-# Turborepo starter
+# Comments SPA
 
-This Turborepo starter is maintained by the Turborepo core team.
+A feature-rich, high-performance Single-Page Application for nested commenting with file attachments, built using modern web technologies and best practices.
 
-## Using this example
+![Turborepo](https://img.shields.io/badge/Turborepo-2C3E50?style=for-the-badge&logo=turborepo&logoColor=white)
+![NestJS](https://img.shields.io/badge/NestJS-CC3366?style=for-the-badge&logo=nestjs&logoColor=white)
+![React](https://img.shields.io/badge/React-007ACC?style=for-the-badge&logo=react&logoColor=white)
+![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-2C3E50?style=for-the-badge&logo=docker&logoColor=white)
 
-Run the following command:
+## ✨ Features
 
-```sh
-npx create-turbo@latest
-```
+### 💬 Advanced Commenting System
 
-## What's inside?
+- **Infinite Nesting**: Create threaded discussions with unlimited depth
+- **Rich Text Editor**: TipTap-powered editor with formatting support (`<a>`, `<code>`, `<i>`, `<strong>`)
+- **Smart Sorting**: Sort comments by username, email, or creation date (ascending/descending)
+- **Pagination**: Efficient cursor-based pagination with 25 comments per page
+- **Lazy Loading**: On-demand loading of nested replies for optimal performance
 
-This Turborepo includes the following packages/apps:
+### 📎 File Attachments
 
-### Apps and Packages
+- **Image Support**: Upload JPG, GIF, PNG images (automatically resized to 320x240px)
+- **Text Files**: Upload .txt files up to 100KB
+- **Instant Preview**: Real-time preview of selected files before submission
+- **Cloud Storage**: Files stored securely in Google Cloud Storage
+- **Lightbox Viewer**: Full-screen viewing experience for images and text files
 
-- `docs`: a [Next.js](https://nextjs.org/) app
-- `web`: another [Next.js](https://nextjs.org/) app
-- `@repo/ui`: a stub React component library shared by both `web` and `docs` applications
-- `@repo/eslint-config`: `eslint` configurations (includes `eslint-config-next` and `eslint-config-prettier`)
-- `@repo/typescript-config`: `tsconfig.json`s used throughout the monorepo
+### 🔒 Security & Performance
 
-Each package/app is 100% [TypeScript](https://www.typescriptlang.org/).
+- **CAPTCHA Protection**: Google reCAPTCHA integration to prevent spam
+- **XSS Prevention**: Content sanitization with DOMPurify
+- **SQL Injection Protection**: Parameterized queries with Drizzle ORM
+- **Input Validation**: Comprehensive Zod schema validation
+- **Optimistic Updates**: Instant UI feedback with TanStack Query
+- **Skeleton Loading**: Progressive loading states for smooth UX
 
-### Utilities
+### 🎨 Modern UI/UX
 
-This Turborepo has some additional tools already setup for you:
+- **Material Design 3**: Consistent design system with dark theme optimization
+- **Responsive Design**: Mobile-first approach with touch-friendly interactions
+- **Accessibility**: ARIA labels, keyboard navigation, and screen reader support
+- **Visual Hierarchy**: Clear indentation and borders for nested conversations
 
-- [TypeScript](https://www.typescriptlang.org/) for static type checking
-- [ESLint](https://eslint.org/) for code linting
-- [Prettier](https://prettier.io) for code formatting
+## 🏗️ Architecture
 
-### Build
-
-To build all apps and packages, run the following command:
-
-```
-cd my-turborepo
-
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo build
-
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo build
-yarn dlx turbo build
-pnpm exec turbo build
-```
-
-You can build a specific package by using a [filter](https://turborepo.com/docs/crafting-your-repository/running-tasks#using-filters):
+This project is a **Turborepo** monorepo containing:
 
 ```
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo build --filter=docs
-
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo build --filter=docs
-yarn exec turbo build --filter=docs
-pnpm exec turbo build --filter=docs
+comments-spa/
+├── apps/
+│   ├── api/          # NestJS backend with Drizzle ORM
+│   └── web/          # React frontend with Vite
+├── packages/
+│   ├── schemas/      # Shared Zod validation schemas
+│   └── tsconfig/     # Shared TypeScript configurations
+└── docker-compose.yaml # Production deployment
 ```
 
-### Develop
+### Backend (NestJS)
 
-To develop all apps and packages, run the following command:
+- **Framework**: NestJS with modular architecture
+- **Database**: PostgreSQL with Drizzle ORM
+- **File Storage**: Google Cloud Storage
+- **Validation**: Zod schemas with shared validation logic
+- **Security**: Helmet, CORS, and rate limiting
 
-```
-cd my-turborepo
+### Frontend (React)
 
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo dev
+- **Build Tool**: Vite for fast development and optimized builds
+- **UI Components**: Shadcn/ui with Tailwind CSS
+- **State Management**: TanStack Query for server state
+- **Rich Text**: TipTap editor with custom extensions
+- **Forms**: React Hook Form with Zod validation
+- **File Handling**: Multipart form uploads with preview
 
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo dev
-yarn exec turbo dev
-pnpm exec turbo dev
-```
+## 🚀 Quick Start
 
-You can develop a specific package by using a [filter](https://turborepo.com/docs/crafting-your-repository/running-tasks#using-filters):
+### Prerequisites
 
-```
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo dev --filter=web
+- **Node.js** 18+ and **pnpm**
+- **Docker** and **Docker Compose**
+- **Google Cloud Storage** account (for file uploads)
 
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo dev --filter=web
-yarn exec turbo dev --filter=web
-pnpm exec turbo dev --filter=web
-```
+### Local Development
 
-### Remote Caching
+1. **Install Dependencies**
 
-> [!TIP]
-> Vercel Remote Cache is free for all plans. Get started today at [vercel.com](https://vercel.com/signup?/signup?utm_source=remote-cache-sdk&utm_campaign=free_remote_cache).
+   ```bash
+   pnpm install
+   ```
 
-Turborepo can use a technique known as [Remote Caching](https://turborepo.com/docs/core-concepts/remote-caching) to share cache artifacts across machines, enabling you to share build caches with your team and CI/CD pipelines.
+2. **Start Database**
 
-By default, Turborepo will cache locally. To enable Remote Caching you will need an account with Vercel. If you don't have an account you can [create one](https://vercel.com/signup?utm_source=turborepo-examples), then enter the following commands:
+   ```bash
+   docker run --name comments_db \
+     -e POSTGRES_USER=postgres \
+     -e POSTGRES_PASSWORD=postgres \
+     -e POSTGRES_DB=comments_spa \
+     -p 5432:5432 -d postgres:17-alpine
+   ```
 
-```
-cd my-turborepo
+3. **Configure Environment**
 
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo login
+   ```bash
+   # Copy environment files
+   cp apps/api/env.example apps/api/.env.local
+   cp apps/web/env.example apps/web/.env.local
+   ```
 
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo login
-yarn exec turbo login
-pnpm exec turbo login
-```
+4. **Configure Google Cloud Storage** (Optional for file uploads)
 
-This will authenticate the Turborepo CLI with your [Vercel account](https://vercel.com/docs/concepts/personal-accounts/overview).
+   ```bash
+   # For file upload functionality, set up GCS credentials:
+   # 1. Create a service account in Google Cloud Console
+   # 2. Download the JSON key file
+   # 3. Copy the credentials template
+   cp apps/api/gcs-credentials.example.json apps/api/gcs-credentials.json
+   # 4. Replace the placeholder values in gcs-credentials.json with your actual credentials
+   # 5. For detailed setup instructions, see:
+   #    https://cloud.google.com/docs/authentication/getting-started
+   ```
 
-Next, you can link your Turborepo to your Remote Cache by running the following command from the root of your Turborepo:
+   > **Note**: File uploads are optional. The commenting system works without GCS configuration, but image and text file attachments require proper GCS setup.
 
-```
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo link
+5. **Run Database Migrations**
 
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo link
-yarn exec turbo link
-pnpm exec turbo link
-```
+   ```bash
+   pnpm --filter api db:migrate
+   ```
 
-## Useful Links
+6. **Start Development Servers**
+   ```bash
+   pnpm dev
+   ```
 
-Learn more about the power of Turborepo:
+## 📡 API Endpoints
 
-- [Tasks](https://turborepo.com/docs/crafting-your-repository/running-tasks)
-- [Caching](https://turborepo.com/docs/crafting-your-repository/caching)
-- [Remote Caching](https://turborepo.com/docs/core-concepts/remote-caching)
-- [Filtering](https://turborepo.com/docs/crafting-your-repository/running-tasks#using-filters)
-- [Configuration Options](https://turborepo.com/docs/reference/configuration)
-- [CLI Usage](https://turborepo.com/docs/reference/command-line-reference)
+### Comments
+
+- `GET /comments` - Fetch paginated root comments with sorting
+- `GET /comments/:id/replies` - Fetch replies to a specific comment
+- `POST /comments` - Create a new comment with optional file attachments
+
+### Query Parameters
+
+- `limit` (1-100, default: 25)
+- `cursor` (UUID for pagination)
+- `sortBy` (`userName`, `email`, `createdAt`)
+- `sortOrder` (`asc`, `desc`)
+
+## 🐳 Production Deployment
+
+1. **Configure Environment**
+
+   ```bash
+   # Copy and configure production environment
+   cp env.example .env
+   ```
+
+   > **Note**: The `gcs-credentials.json` file is automatically created from the `GCS_KEY_FILE_CONTENT` environment variable during the container startup process via the `entrypoint.sh` script. This approach keeps sensitive credentials secure while maintaining deployment flexibility.
+
+2. **Deploy with Docker Compose**
+   ```bash
+   docker-compose up --build -d
+   ```
+
+The application will be available at:
+
+- **Frontend**: http://localhost:3000
+- **Backend API**: http://localhost:4000
+
+## 📊 Performance Features
+
+### Database Optimization
+
+- **Cursor-based Pagination**: Consistent performance regardless of dataset size
+- **N+1 Query Prevention**: Efficient SQL queries with subquery optimization
+- **Indexing Strategy**: Optimized indexes for sorting and filtering operations
+
+### Frontend Performance
+
+- **Code Splitting**: Lazy-loaded components and routes
+- **Caching Strategy**: Intelligent TanStack Query caching with stale-time management
+- **Optimistic Updates**: Instant UI feedback for better perceived performance
+- **Skeleton Loading**: Progressive content loading with placeholder states
+
+## 🔒 Security Features
+
+### Input Validation & Sanitization
+
+- **Zod Schemas**: Runtime type validation for all inputs
+- **DOMPurify**: XSS protection for user-generated content
+- **SQL Injection Prevention**: Parameterized queries with Drizzle ORM
+
+### File Upload Security
+
+- **File Type Validation**: Strict MIME type checking on both client and server
+- **Size Limits**: Configurable file size restrictions
+- **Secure Storage**: Private cloud storage with access controls
+
+### Authentication & Authorization
+
+- **CAPTCHA Integration**: Google reCAPTCHA for spam prevention
+- **CORS Configuration**: Secure cross-origin resource sharing
+- **Helmet Security Headers**: Comprehensive HTTP security headers
+
+## 📝 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 🆘 Support
+
+- **Issues**: Bug reports and feature requests via GitHub Issues
+- **Discussions**: Community discussions and Q&A on GitHub Discussions
+
+---
+
+**Built with ❤️ using modern web technologies and best practices**
