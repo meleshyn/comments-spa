@@ -150,7 +150,8 @@ export class StorageService {
       });
 
       return new Promise((resolve, reject) => {
-        stream.on('error', () => {
+        stream.on('error', (error) => {
+          this.logger.error(`Failed to upload file ${fileName}: ${error}`);
           reject(new Error('Failed to upload file'));
         });
         stream.on('finish', () => {
