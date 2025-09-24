@@ -45,6 +45,11 @@ function App() {
   return (
     <div className="min-h-screen bg-background p-6">
       <div className="max-w-2xl mx-auto space-y-6">
+        {/* Header */}
+        <div className="px-3 mb-0">
+          <div className="mx-auto h-16 bg-radial-[ellipse_at_center_bottom] from-primary/20 to-80%"></div>
+        </div>
+
         {/* Main Comment Form */}
         <CommentForm
           onSubmit={handleCommentSubmit}
