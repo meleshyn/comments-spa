@@ -1,56 +1,49 @@
-# ---- Base ----
-FROM node:22-alpine AS base
+# ---- STAGE 1: PRUNER ----
+# Creates a pruned copy of the project containing only what's necessary for `web`.
+FROM node:22-alpine AS pruner
 WORKDIR /app
+RUN corepack enable
 
-# Install pnpm and turbo
-RUN npm install -g pnpm turbo
-
-
-# ---- Pruner ----
-# Prune the monorepo to only include dependencies for the "web" app
-FROM base AS pruner
 COPY . .
-RUN turbo prune --scope=web --docker
+# Using `dlx` to run turbo without global installation
+RUN pnpm dlx turbo prune --scope=web --docker
 
 
-# ---- Builder ----
-# Build the "web" app and its dependencies
-FROM base AS builder
+# ---- STAGE 2: BUILDER ----
+# Builds the front-end application and all its dependencies.
+FROM node:22-alpine AS builder
+WORKDIR /app
+RUN corepack enable
 
-# Copy the pruned lockfile and workspace config
+# Copy files for installing dependencies
 COPY --from=pruner /app/out/json/ .
 COPY --from=pruner /app/out/pnpm-lock.yaml ./pnpm-lock.yaml
 COPY --from=pruner /app/out/pnpm-workspace.yaml ./pnpm-workspace.yaml
-
-# Install dependencies
 RUN pnpm install --frozen-lockfile
 
 # Copy the pruned source code
 COPY --from=pruner /app/out/full/ .
 
-# Environment variables
-ARG VITE_API_URL
-ARG VITE_RECAPTCHA_SITE_KEY
-ENV VITE_API_URL=${VITE_API_URL}
-ENV VITE_RECAPTCHA_SITE_KEY=${VITE_RECAPTCHA_SITE_KEY}
+# Set environment variables for build
+ENV VITE_API_URL="__VITE_API_URL__"
+ENV VITE_RECAPTCHA_SITE_KEY="__VITE_RECAPTCHA_SITE_KEY__"
 
-# Build the app
-RUN pnpm turbo run build --filter=web
+# Build `web` and all its internal dependencies (e.g., common packages)
+RUN pnpm turbo run build --filter=web...
 
 
-# ---- Runner ----
-# Create the final, minimal production image
-FROM node:22-slim AS runner
-WORKDIR /app
+# ---- STAGE 3: RUNNER ----
+# Final, ultra-lightweight image based on Nginx for serving static files.
+FROM nginx:1.27-alpine-slim AS runner
 
-# Install `serve` to run the static site
-RUN npm install -g serve
+# Copy only compiled static files from `builder` to Nginx directory
+COPY --from=builder /app/apps/web/dist /usr/share/nginx/html
 
-# Copy built static files from the builder stage
-COPY --from=builder /app/apps/web/dist /app/public
+# Copy the entrypoint script
+COPY --from=builder /app/apps/web/entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
 
-USER node
+EXPOSE 80
 
-EXPOSE 3000
-
-CMD ["serve", "-s", "public", "-l", "3000"]
+ENTRYPOINT ["/entrypoint.sh"]
+CMD ["nginx", "-g", "daemon off;"]
