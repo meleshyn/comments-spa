@@ -104,8 +104,8 @@ comments-spa/
 
    ```bash
    # Copy environment files
-   cp apps/api/env.example apps/api/.env.local
-   cp apps/web/env.example apps/web/.env.local
+   cp apps/api/env.example apps/api/.env
+   cp apps/web/env.example apps/web/.env
    ```
 
 4. **Configure Google Cloud Storage** (Optional for file uploads)
